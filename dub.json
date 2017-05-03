@@ -1,0 +1,9 @@
+{
+	"name": "pixelgui",
+	"authors": [
+		"webfreak"
+	],
+	"description": "GUI library rendering in memory with efficient updates",
+	"copyright": "Copyright © 2017, webfreak",
+	"license": "MIT"
+}
