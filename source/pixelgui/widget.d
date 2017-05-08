@@ -630,8 +630,6 @@ class LinearLayout : Layout
 
 	override void layout(size_t i, ref RawWidget widget, Container[] hierarchy, void* prepass)
 	{
-		import std.stdio;
-
 		auto size = .layout(widget.rectangle, hierarchy);
 		auto margin = .layout!true(widget.margin, hierarchy);
 		int xMod, yMod;
@@ -644,7 +642,7 @@ class LinearLayout : Layout
 			y = curOrtho + margin.y;
 			maxOrtho = max(maxOrtho, margin.bottom + size.h);
 			xMod = size.w;
-			if (x + xMod > computedRectangle.w && !first)
+			if (x + xMod + lastMargin > computedRectangle.w && !first)
 			{
 				x = margin.x;
 				y += maxOrtho;
@@ -659,7 +657,7 @@ class LinearLayout : Layout
 		case Direction.verticalReverse:
 			break;
 		}
-		widget.computedRectangle = Container(x, y, size.w, size.h);
+		widget.computedRectangle = Container(computedRectangle.x + x, computedRectangle.y + y, size.w, size.h);
 		x += xMod;
 		y += yMod;
 		first = false;

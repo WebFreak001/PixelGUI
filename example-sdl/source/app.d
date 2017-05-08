@@ -42,16 +42,16 @@ void main()
 	DerelictSDL2.load(SharedLibVersion(2, 0, 2));
 
 	auto gui = makePixelGUI;
-	auto window = gui.newRootWidget!LinearLayout(853, 480);
+	auto window = gui.newRootWidget!LinearLayout(14 * 20 + 10, 19 * 20 + 10);
 
-	window.padding = Rectangle(8.px);
+	window.padding = Rectangle(4.px);
 
 	void addButton(string color)()
 	{
 		auto button = new MaterialButton();
-		button.rectangle = Rectangle(0.px, 32.px, 32.px, 0.px);
+		button.rectangle = Rectangle(0.px, 18.px, 18.px, 0.px);
 		button.padding = Rectangle(0.px);
-		button.margin = Rectangle(8.px);
+		button.margin = Rectangle(2.px);
 		button.color = makeButtonColor!color;
 		window.addChild(button);
 	}
