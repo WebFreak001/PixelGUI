@@ -675,8 +675,33 @@ class LinearLayout : Layout
 			}
 			break;
 		case Direction.vertical:
+			auto effMargin = max(lastMargin, margin.y);
+			lastMargin = margin.bottom;
+			y += effMargin;
+			x = curOrtho + margin.x;
+			maxOrtho = max(maxOrtho, margin.right + size.w);
+			yMod = size.h;
+			if (y + yMod + lastMargin > computedRectangle.h && !first)
+			{
+				y = margin.y;
+				x += maxOrtho;
+				curOrtho += maxOrtho;
+				maxOrtho = 0;
+			}
 			break;
 		case Direction.verticalReverse:
+			auto effMargin = max(lastMargin, margin.bottom);
+			lastMargin = margin.y;
+			y -= effMargin + size.h;
+			x = curOrtho + margin.x;
+			maxOrtho = max(maxOrtho, margin.right + size.w);
+			if (y - lastMargin < 0 && !first)
+			{
+				y = computedRectangle.h - effMargin - size.h;
+				x += maxOrtho;
+				curOrtho += maxOrtho;
+				maxOrtho = 0;
+			}
 			break;
 		}
 		widget.computedRectangle = Container(computedRectangle.x + x, computedRectangle.y + y, size.w, size.h);
