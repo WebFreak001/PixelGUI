@@ -3,6 +3,8 @@ module pixelgui.widget;
 import pixelgui.constants;
 import pixelgui.render;
 
+import tinyevent;
+
 import std.algorithm;
 import std.math;
 import std.exception;
@@ -320,70 +322,43 @@ abstract class RawWidget
 		return hasGlobalFocus && hasLocalFocus && canReceiveFocus;
 	}
 
-	protected void onResize(int width, int height)
-	{
-	}
-
-	protected void onFocus()
-	{
-	}
-
-	protected void onUnfocus()
-	{
-	}
-
-	protected void onUnhover()
-	{
-	}
-
-	protected void onClose()
-	{
-	}
-
-	protected void onKeyDown(int scancode, int mods, Key key, int repeats)
-	{
-	}
-
-	protected void onKeyUp(int scancode, int mods, Key key)
-	{
-	}
-
-	protected void onTextInput(string text)
-	{
-	}
-
-	protected void onMouseMove(int x, int y)
-	{
-	}
-
-	protected void onMouseDown(int x, int y, MouseButton button, int clicks)
-	{
-	}
-
-	protected void onMouseUp(int x, int y, MouseButton button)
-	{
-	}
-
-	protected void onScroll(int scrollX, int scrollY)
-	{
-	}
-
-	protected void onDropFile(string filename)
-	{
-	}
-
-	protected void onDropText(string text)
-	{
-	}
+	/// (width, height) event when widget got resized
+	Event!(int, int) onResize;
+	/// Event when widget got focused
+	Event!() onFocus;
+	/// Event when widget got unfocused
+	Event!() onUnfocus;
+	/// Event when widget got unhovered
+	Event!() onUnhover;
+	/// Event on root window when it got closed
+	Event!() onClose;
+	/// (scancode, mods, key, repeats) when key is pressed
+	Event!(int, int, Key, int) onKeyDown;
+	/// (scancode, mods, key) when key is unpressed
+	Event!(int, int, Key) onKeyUp;
+	/// (text) when text has been entered (for example unicode or compose key)
+	Event!(string) onTextInput;
+	/// (x, y) when mouse has been moved
+	Event!(int, int) onMouseMove;
+	/// (x, y, button, clicks) when mouse has been pressed down
+	Event!(int, int, MouseButton, int) onMouseDown;
+	/// (x, y, button) when mouse has been released
+	Event!(int, int, MouseButton) onMouseUp;
+	/// (scrollX, scrollY) when mouse wheel has been used
+	Event!(int, int) onScroll;
+	/// (filename) when file has been dragged into the window
+	Event!(string) onDropFile;
+	/// (text) when text has been dragged into the window
+	Event!(string) onDropText;
 
 	void handleResize(int width, int height)
 	{
-		onResize(width, height);
+		onResize.emit(width, height);
 	}
 
 	void handleFocus()
 	{
-		onFocus();
+		onFocus.emit();
 		hasGlobalFocus = true;
 		foreach (child; children)
 			child.handleFocus();
@@ -391,7 +366,7 @@ abstract class RawWidget
 
 	void handleUnfocus()
 	{
-		onUnfocus();
+		onUnfocus.emit();
 		hasGlobalFocus = false;
 		foreach (child; children)
 			child.handleUnfocus();
@@ -399,28 +374,28 @@ abstract class RawWidget
 
 	void handleUnhover()
 	{
-		onUnhover();
+		onUnhover.emit();
 		hadHover = false;
 	}
 
 	void handleClose()
 	{
-		onClose();
+		onClose.emit();
 	}
 
 	void handleKeyDown(int scancode, int mods, Key key, int repeats)
 	{
-		onKeyDown(scancode, mods, key, repeats);
+		onKeyDown.emit(scancode, mods, key, repeats);
 	}
 
 	void handleKeyUp(int scancode, int mods, Key key)
 	{
-		onKeyUp(scancode, mods, key);
+		onKeyUp.emit(scancode, mods, key);
 	}
 
 	void handleTextInput(string text)
 	{
-		onTextInput(text);
+		onTextInput.emit(text);
 	}
 
 	bool handleMouseMove(int x, int y)
@@ -436,7 +411,7 @@ abstract class RawWidget
 					return true;
 				}
 			hadHover = true;
-			onMouseMove(x - computedRectangle.x, y - computedRectangle.y);
+			onMouseMove.emit(x - computedRectangle.x, y - computedRectangle.y);
 			return true;
 		}
 		else
@@ -459,7 +434,7 @@ abstract class RawWidget
 						handleUnhover();
 					return true;
 				}
-			onMouseDown(x - computedRectangle.x, y - computedRectangle.y, button, clicks);
+			onMouseDown.emit(x - computedRectangle.x, y - computedRectangle.y, button, clicks);
 			return true;
 		}
 		else
@@ -482,7 +457,7 @@ abstract class RawWidget
 						handleUnhover();
 					return true;
 				}
-			onMouseUp(x - computedRectangle.x, y - computedRectangle.y, button);
+			onMouseUp.emit(x - computedRectangle.x, y - computedRectangle.y, button);
 			return true;
 		}
 		else
@@ -495,17 +470,17 @@ abstract class RawWidget
 
 	void handleScroll(int scrollX, int scrollY)
 	{
-		onScroll(scrollX, scrollY);
+		onScroll.emit(scrollX, scrollY);
 	}
 
 	void handleDropFile(string filename)
 	{
-		onDropFile(filename);
+		onDropFile.emit(filename);
 	}
 
 	void handleDropText(string text)
 	{
-		onDropText(text);
+		onDropText.emit(text);
 	}
 }
 
@@ -704,7 +679,8 @@ class LinearLayout : Layout
 			}
 			break;
 		}
-		widget.computedRectangle = Container(computedRectangle.x + x, computedRectangle.y + y, size.w, size.h);
+		widget.computedRectangle = Container(computedRectangle.x + x,
+				computedRectangle.y + y, size.w, size.h);
 		x += xMod;
 		y += yMod;
 		first = false;

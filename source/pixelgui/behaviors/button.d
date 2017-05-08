@@ -4,7 +4,7 @@ import pixelgui.constants;
 import pixelgui.render;
 import pixelgui.widget;
 
-import std.stdio;
+import tinyevent;
 
 abstract class ButtonBehavior(BaseWidget : RawWidget) : BaseWidget
 {
@@ -14,16 +14,24 @@ abstract class ButtonBehavior(BaseWidget : RawWidget) : BaseWidget
 
 	bool canReceiveFocus = true;
 
+	Event!() onClick;
+
+	this()
+	{
+		onMouseMove ~= &mouseMove;
+		onUnhover ~= &unhover;
+		onMouseDown ~= &mouseDown;
+		onMouseUp ~= &mouseUp;
+		onKeyDown ~= &keyDown;
+		onKeyUp ~= &keyUp;
+	}
+
 	bool isActive() const @property
 	{
 		return isMouseActive || isKeyboardActive;
 	}
 
-	void onClick()
-	{
-	}
-
-	override void onMouseMove(int, int)
+	void mouseMove(int, int)
 	{
 		if (!isHovered)
 		{
@@ -32,7 +40,7 @@ abstract class ButtonBehavior(BaseWidget : RawWidget) : BaseWidget
 		}
 	}
 
-	override void onUnhover()
+	void unhover()
 	{
 		if (isHovered)
 		{
@@ -41,7 +49,7 @@ abstract class ButtonBehavior(BaseWidget : RawWidget) : BaseWidget
 		}
 	}
 
-	override void onMouseDown(int, int, MouseButton button, int)
+	void mouseDown(int, int, MouseButton button, int)
 	{
 		if (button == MouseButton.left)
 		{
@@ -50,18 +58,18 @@ abstract class ButtonBehavior(BaseWidget : RawWidget) : BaseWidget
 		}
 	}
 
-	override void onMouseUp(int, int, MouseButton button)
+	void mouseUp(int, int, MouseButton button)
 	{
 		if (button == MouseButton.left)
 		{
 			if (isHovered && isMouseActive)
-				onClick();
+				onClick.emit();
 			isMouseActive = false;
 			redraw();
 		}
 	}
 
-	override void onKeyDown(int, int, Key key, int)
+	void keyDown(int, int, Key key, int)
 	{
 		if (isFocused && (key == Key.enter || key == Key.space))
 		{
@@ -70,12 +78,12 @@ abstract class ButtonBehavior(BaseWidget : RawWidget) : BaseWidget
 		}
 	}
 
-	override void onKeyUp(int, int, Key key)
+	void keyUp(int, int, Key key)
 	{
 		if (key == Key.enter || key == Key.space)
 		{
 			if (isFocused && isKeyboardActive)
-				onClick();
+				onClick.emit();
 			isKeyboardActive = false;
 			redraw();
 		}
