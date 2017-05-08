@@ -3,6 +3,7 @@ import derelict.sdl2.sdl;
 import pixelgui;
 import pixelgui.material;
 
+import std.stdio;
 import std.string;
 
 /// Exception for SDL related issues
@@ -53,6 +54,9 @@ void main()
 		button.padding = Rectangle(0.px);
 		button.margin = Rectangle(2.px);
 		button.color = makeButtonColor!color;
+		button.onClick ~= () {
+			writeln(color, ": ", button.color.normalColor.toColorHexString);
+		};
 		window.addChild(button);
 	}
 

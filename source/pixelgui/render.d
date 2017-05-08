@@ -3,6 +3,23 @@ module pixelgui.render;
 /// Premultiplied [R, G, B, A] color
 alias Color = ubyte[4];
 
+string toColorHexString(in Color color)
+{
+	pragma(inline, true) immutable(char)[2] digit(ubyte b)
+	{
+		ubyte l = b / 16;
+		ubyte r = b % 16;
+		immutable(char) lc = cast(immutable(char))((l >= 10 ? 'A' - 10 : '0') + l);
+		immutable(char) rc = cast(immutable(char))((r >= 10 ? 'A' - 10 : '0') + r);
+		return [lc, rc];
+	}
+
+	if (color[3] == 0xFF)
+		return '#' ~ digit(color[0]) ~ digit(color[1]) ~ digit(color[2]);
+	else
+		return '#' ~ digit(color[0]) ~ digit(color[1]) ~ digit(color[2]) ~ digit(color[3]);
+}
+
 template col(string hex)
 {
 	static if (hex.length == 6)
