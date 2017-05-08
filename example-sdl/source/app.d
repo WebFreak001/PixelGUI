@@ -1,6 +1,7 @@
 import derelict.sdl2.sdl;
 
 import pixelgui;
+import pixelgui.material;
 
 import std.string;
 
@@ -41,11 +42,26 @@ void main()
 	DerelictSDL2.load(SharedLibVersion(2, 0, 2));
 
 	auto gui = makePixelGUI;
-	auto window = gui.newRootWidget!FloatingLayout(853, 480);
+	auto window = gui.newRootWidget!LinearLayout(853, 480);
 
-	auto button = new Button();
-	button.rectangle = Rectangle(8.px, 99.percent, 99.percent, 8.px);
-	window.addChild(button);
+	window.padding = Rectangle(8.px);
+
+	void addButton(string color)()
+	{
+		auto button = new MaterialButton();
+		button.rectangle = Rectangle(0.px, 32.px, 32.px, 0.px);
+		button.padding = Rectangle(0.px);
+		button.margin = Rectangle(8.px);
+		button.color = makeButtonColor!color;
+		window.addChild(button);
+	}
+
+	foreach (color; __traits(allMembers, MaterialColors))
+	{
+		static if (color != "transparent") // move transparent to end for nicer alignment
+			addButton!color;
+	}
+	addButton!"transparent";
 
 	if (SDL_Init(SDL_INIT_VIDEO) < 0)
 		throw new SDLException();
@@ -92,51 +108,53 @@ void main()
 					window.redrawRect(0, 0, window.width, window.height);
 					break;
 				case SDL_WINDOWEVENT_FOCUS_GAINED:
-					window.onFocus();
+					window.handleFocus();
 					break;
 				case SDL_WINDOWEVENT_FOCUS_LOST:
-					window.onUnfocus();
+					window.handleUnfocus();
 					break;
 				case SDL_WINDOWEVENT_CLOSE:
-					window.onClose();
+					window.handleClose();
 					break;
 				case SDL_WINDOWEVENT_LEAVE:
-					window.onUnhover();
+					window.handleUnhover();
 					break;
 				default:
 					break;
 				}
 				break;
 			case SDL_KEYDOWN:
-				window.onKeyDown(event.key.keysym.scancode, event.key.keysym.mod,
-						event.key.keysym.sym, event.key.repeat);
+				window.handleKeyDown(event.key.keysym.scancode, event.key.keysym.mod,
+						cast(Key) event.key.keysym.sym, event.key.repeat);
 				break;
 			case SDL_KEYUP:
-				window.onKeyUp(event.key.keysym.scancode, event.key.keysym.mod, event.key.keysym.sym);
+				window.handleKeyUp(event.key.keysym.scancode, event.key.keysym.mod,
+						cast(Key) event.key.keysym.sym);
 				break;
 			case SDL_TEXTINPUT:
-				window.onTextInput(event.text.text.ptr.fromStringz.idup);
+				window.handleTextInput(event.text.text.ptr.fromStringz.idup);
 				break;
 			case SDL_MOUSEMOTION:
-				window.onMouseMove(event.motion.x, event.motion.y);
+				window.handleMouseMove(event.motion.x, event.motion.y);
 				break;
 			case SDL_MOUSEBUTTONDOWN:
-				window.onMouseDown(event.button.x, event.button.y,
+				window.handleMouseDown(event.button.x, event.button.y,
 						event.button.button.sdlButtonToGuiButton, event.button.clicks);
 				break;
 			case SDL_MOUSEBUTTONUP:
-				window.onMouseUp(event.button.x, event.button.y, event.button.button.sdlButtonToGuiButton);
+				window.handleMouseUp(event.button.x, event.button.y,
+						event.button.button.sdlButtonToGuiButton);
 				break;
 			case SDL_MOUSEWHEEL:
 				int r = event.wheel.direction == SDL_MOUSEWHEEL_FLIPPED ? -1 : 1;
-				window.onScroll(event.wheel.x * r, event.wheel.y * r);
+				window.handleScroll(event.wheel.x * r, event.wheel.y * r);
 				break;
 			case SDL_DROPFILE:
-				window.onDropFile(event.drop.file.fromStringz.idup);
+				window.handleDropFile(event.drop.file.fromStringz.idup);
 				SDL_free(event.drop.file);
 				break;
 			case SDL_DROPTEXT:
-				window.onDropText(event.drop.file.fromStringz.idup);
+				window.handleDropText(event.drop.file.fromStringz.idup);
 				SDL_free(event.drop.file);
 				break;
 			case SDL_RENDER_DEVICE_RESET:

@@ -262,6 +262,10 @@ void copyTo(BlendOp mixOp = BlendOp.over)(in RenderTarget src, ref RenderTarget 
 		clipWidth = src.w - offX;
 	if (clipHeight + offY >= src.h)
 		clipHeight = src.h - offY;
+	if (clipWidth + x >= target.w)
+		clipWidth = target.w - x;
+	if (clipHeight + y >= target.h)
+		clipHeight = target.h - y;
 	if (x + clipWidth < 0 || y + clipHeight < 0)
 		return;
 	for (int row = 0; row < clipHeight; row++)

@@ -20,17 +20,15 @@ class RootWidget(T : RawWidget) : T
 	bool draw()
 	{
 		if (requiresRedraw)
-		{
 			target.clearFast(HTMLColors.white);
-			requiresRedraw = false;
-		}
 		if (shouldRedraw)
 		{
-			Container[1] arr = [Container(0, 0, target.w, target.h)];
-			finalDraw(target, arr[]);
+			computedRectangle = Container(0, 0, width, height);
+			finalDraw(target, [computedRectangle]);
 			clearDrawQueue();
 			return true;
 		}
+		requiresRedraw = false;
 		return false;
 	}
 
@@ -78,7 +76,7 @@ struct PixelGUI
 			allocator.expandArray(widget.target.pixels, newSize - oldSize).enforce;
 		else
 			allocator.shrinkArray(widget.target.pixels, oldSize - newSize).enforce;
-		widget.onResize(width, height);
+		widget.handleResize(width, height);
 		widget.redraw();
 	}
 }

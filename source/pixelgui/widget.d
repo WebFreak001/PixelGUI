@@ -3,7 +3,9 @@ module pixelgui.widget;
 import pixelgui.constants;
 import pixelgui.render;
 
+import std.algorithm;
 import std.math;
+import std.exception;
 
 enum Overflow
 {
@@ -17,6 +19,9 @@ enum Overflow
 struct Container
 {
 	int x, y, w, h;
+
+	alias right = w;
+	alias bottom = h;
 
 	Container push(int y, int right, int bottom, int x, Overflow overflow) const
 	{
@@ -60,7 +65,8 @@ struct Length
 		point,
 		vw,
 		vh,
-		em
+		em,
+		fitContent
 	}
 
 	float value = 0;
@@ -82,6 +88,8 @@ struct Length
 			return hierarchy[0].h * 0.01 * value;
 		case Mode.em:
 			return value * 16; // TODO
+		case Mode.fitContent:
+			return 0;
 		}
 	}
 
@@ -228,13 +236,22 @@ Length em(float i)
 	return Length(i, Length.Mode.em);
 }
 
-Container layout(Rectangle r, Container[] hierarchy, Overflow overflow = Overflow.shown)
+Length fitContent()
 {
-	int top = cast(int) round(r.top.compute(hierarchy, true));
-	int right = cast(int) round(r.right.compute(hierarchy, false));
-	int bottom = cast(int) round(r.bottom.compute(hierarchy, true));
-	int left = cast(int) round(r.left.compute(hierarchy, false));
-	return hierarchy[$ - 1].push(top, right, bottom, left, overflow);
+	return Length(0, Length.Mode.fitContent);
+}
+
+Container layout(bool rectangle = false)(Rectangle r, Container[] hierarchy,
+		Overflow overflow = Overflow.shown)
+{
+	int top = cast(int) round(r.top.compute(hierarchy, false));
+	int right = cast(int) round(r.right.compute(hierarchy, true));
+	int bottom = cast(int) round(r.bottom.compute(hierarchy, false));
+	int left = cast(int) round(r.left.compute(hierarchy, true));
+	static if (rectangle)
+		return Container(left, top, right, bottom);
+	else
+		return hierarchy[$ - 1].push(top, right, bottom, left, overflow);
 }
 
 abstract class RawWidget
@@ -242,13 +259,24 @@ abstract class RawWidget
 	Rectangle rectangle = Rectangle.full;
 	Rectangle margin;
 	Rectangle padding;
+	RawWidget parent;
 	RawWidget[] children;
 	Overflow overflow;
 	bool requiresRedraw = true;
+	bool hasLocalFocus = false;
+	bool hasGlobalFocus = false;
+	bool canReceiveFocus = false;
+	bool hadHover = false;
 
-	Rectangle computedRectangle = Rectangle.full;
+	Container computedRectangle;
 
 	abstract void finalDraw(ref RenderTarget dest, Container[] hierarchy);
+
+	/// Override and return true if there are any transparent pixels drawn
+	bool isTransparent() const @property
+	{
+		return false;
+	}
 
 	/// Returns true if this widget or any children require a redraw
 	bool shouldRedraw() const @property
@@ -263,7 +291,11 @@ abstract class RawWidget
 
 	void redraw()
 	{
+		if (requiresRedraw)
+			return;
 		requiresRedraw = true;
+		if (isTransparent && parent)
+			parent.redraw();
 		foreach (ref child; children)
 			child.redraw();
 	}
@@ -277,64 +309,203 @@ abstract class RawWidget
 
 	void addChild(RawWidget widget)
 	{
+		enforce(widget.parent is null, "Can't add widget to two different containers");
+		widget.parent = this;
 		widget.redraw();
 		children ~= widget;
 	}
 
-	void onResize(int width, int height)
+	bool isFocused() const @property
+	{
+		return hasGlobalFocus && hasLocalFocus && canReceiveFocus;
+	}
+
+	protected void onResize(int width, int height)
 	{
 	}
 
-	void onFocus()
+	protected void onFocus()
 	{
 	}
 
-	void onUnfocus()
+	protected void onUnfocus()
 	{
 	}
 
-	void onUnhover()
+	protected void onUnhover()
 	{
 	}
 
-	void onClose()
+	protected void onClose()
 	{
 	}
 
-	void onKeyDown(int scancode, int mods, int key, int repeats)
+	protected void onKeyDown(int scancode, int mods, Key key, int repeats)
 	{
 	}
 
-	void onKeyUp(int scancode, int mods, int key)
+	protected void onKeyUp(int scancode, int mods, Key key)
 	{
 	}
 
-	void onTextInput(string text)
+	protected void onTextInput(string text)
 	{
 	}
 
-	void onMouseMove(int x, int y)
+	protected void onMouseMove(int x, int y)
 	{
 	}
 
-	void onMouseDown(int x, int y, MouseButton button, int clicks)
+	protected void onMouseDown(int x, int y, MouseButton button, int clicks)
 	{
 	}
 
-	void onMouseUp(int x, int y, MouseButton button)
+	protected void onMouseUp(int x, int y, MouseButton button)
 	{
 	}
 
-	void onScroll(int scrollX, int scrollY)
+	protected void onScroll(int scrollX, int scrollY)
 	{
 	}
 
-	void onDropFile(string filename)
+	protected void onDropFile(string filename)
 	{
 	}
 
-	void onDropText(string text)
+	protected void onDropText(string text)
 	{
+	}
+
+	void handleResize(int width, int height)
+	{
+		onResize(width, height);
+	}
+
+	void handleFocus()
+	{
+		onFocus();
+		hasGlobalFocus = true;
+		foreach (child; children)
+			child.handleFocus();
+	}
+
+	void handleUnfocus()
+	{
+		onUnfocus();
+		hasGlobalFocus = false;
+		foreach (child; children)
+			child.handleUnfocus();
+	}
+
+	void handleUnhover()
+	{
+		onUnhover();
+		hadHover = false;
+	}
+
+	void handleClose()
+	{
+		onClose();
+	}
+
+	void handleKeyDown(int scancode, int mods, Key key, int repeats)
+	{
+		onKeyDown(scancode, mods, key, repeats);
+	}
+
+	void handleKeyUp(int scancode, int mods, Key key)
+	{
+		onKeyUp(scancode, mods, key);
+	}
+
+	void handleTextInput(string text)
+	{
+		onTextInput(text);
+	}
+
+	bool handleMouseMove(int x, int y)
+	{
+		if (!parent || x >= computedRectangle.x && x < computedRectangle.x + computedRectangle.w
+				&& y >= computedRectangle.y && y < computedRectangle.y + computedRectangle.h)
+		{
+			foreach_reverse (child; children)
+				if (child.handleMouseMove(x, y))
+				{
+					if (hadHover)
+						handleUnhover();
+					return true;
+				}
+			hadHover = true;
+			onMouseMove(x - computedRectangle.x, y - computedRectangle.y);
+			return true;
+		}
+		else
+		{
+			if (hadHover)
+				handleUnhover();
+			return false;
+		}
+	}
+
+	bool handleMouseDown(int x, int y, MouseButton button, int clicks)
+	{
+		if (!parent || x >= computedRectangle.x && x < computedRectangle.x + computedRectangle.w
+				&& y >= computedRectangle.y && y < computedRectangle.y + computedRectangle.h)
+		{
+			foreach_reverse (child; children)
+				if (child.handleMouseDown(x, y, button, clicks))
+				{
+					if (hadHover)
+						handleUnhover();
+					return true;
+				}
+			onMouseDown(x - computedRectangle.x, y - computedRectangle.y, button, clicks);
+			return true;
+		}
+		else
+		{
+			if (hadHover)
+				handleUnhover();
+			return false;
+		}
+	}
+
+	bool handleMouseUp(int x, int y, MouseButton button)
+	{
+		if (!parent || x >= computedRectangle.x && x < computedRectangle.x + computedRectangle.w
+				&& y >= computedRectangle.y && y < computedRectangle.y + computedRectangle.h)
+		{
+			foreach_reverse (child; children)
+				if (child.handleMouseUp(x, y, button))
+				{
+					if (hadHover)
+						handleUnhover();
+					return true;
+				}
+			onMouseUp(x - computedRectangle.x, y - computedRectangle.y, button);
+			return true;
+		}
+		else
+		{
+			if (hadHover)
+				handleUnhover();
+			return false;
+		}
+	}
+
+	void handleScroll(int scrollX, int scrollY)
+	{
+		onScroll(scrollX, scrollY);
+	}
+
+	void handleDropFile(string filename)
+	{
+		onDropFile(filename);
+	}
+
+	void handleDropText(string text)
+	{
+		onDropText(text);
 	}
 }
 
@@ -342,19 +513,21 @@ abstract class FastWidget : RawWidget
 {
 	override void finalDraw(ref RenderTarget dest, Container[] hierarchy)
 	{
-		auto size = layout(computedRectangle, hierarchy, overflow);
 		if (requiresRedraw)
-			draw(dest, size);
-		auto computedPadding = layout(padding, hierarchy);
-		size.x += computedPadding.x;
-		size.y += computedPadding.y;
-		size.w -= computedPadding.w;
-		size.h -= computedPadding.h;
-		if (overflow != Overflow.hidden || (size.w > 0 && size.h > 0))
+			draw(dest, computedRectangle);
+		auto computedPadding = layout!true(padding, hierarchy);
+		computedRectangle.x += computedPadding.x;
+		computedRectangle.y += computedPadding.y;
+		computedRectangle.w -= computedPadding.x + computedPadding.right;
+		computedRectangle.h -= computedPadding.y + computedPadding.bottom;
+		if (overflow != Overflow.hidden || (computedRectangle.w > 0 && computedRectangle.h > 0))
 		{
-			hierarchy ~= size;
+			hierarchy ~= computedRectangle;
 			foreach (child; children)
+			{
+				child.computedRectangle = layout(child.rectangle, hierarchy, Overflow.hidden);
 				child.finalDraw(dest, hierarchy);
+			}
 		}
 	}
 
@@ -365,18 +538,27 @@ abstract class ManagedWidget : RawWidget
 {
 	override void finalDraw(ref RenderTarget dest, Container[] hierarchy)
 	{
-		auto size = layout(computedRectangle, hierarchy, overflow);
-		if (size.w > 0 && size.h > 0 && shouldRedraw)
+		if (computedRectangle.w > 0 && computedRectangle.h > 0 && shouldRedraw)
 		{
 			RenderTarget img;
-			img.w = size.w;
-			img.h = size.h;
+			img.w = computedRectangle.w;
+			img.h = computedRectangle.h;
 			img.pixels = new ubyte[img.w * img.h * 4];
 			draw(img);
-			img.copyTo(dest, size.x, size.y);
-			hierarchy ~= size;
+			img.copyTo(dest, computedRectangle.x, computedRectangle.y);
+			auto computedPadding = .layout!true(padding, hierarchy);
+			computedRectangle.x += computedPadding.x;
+			computedRectangle.y += computedPadding.y;
+			computedRectangle.w -= computedPadding.x + computedPadding.right;
+			computedRectangle.h -= computedPadding.y + computedPadding.bottom;
+			hierarchy ~= computedRectangle;
 			foreach (child; children)
+			{
+				child.computedRectangle = layout(child.rectangle, hierarchy, Overflow.hidden);
+				child.computedRectangle.x -= computedRectangle.x;
+				child.computedRectangle.y -= computedRectangle.y;
 				child.finalDraw(dest, hierarchy);
+			}
 		}
 	}
 
@@ -391,8 +573,12 @@ abstract class Layout : RawWidget
 	{
 		if (!shouldRedraw)
 			return;
-		auto size = .layout(computedRectangle, hierarchy, overflow);
-		hierarchy ~= size;
+		auto computedPadding = .layout!true(padding, hierarchy);
+		computedRectangle.x += computedPadding.x;
+		computedRectangle.y += computedPadding.y;
+		computedRectangle.w -= computedPadding.x + computedPadding.right;
+		computedRectangle.h -= computedPadding.y + computedPadding.bottom;
+		hierarchy ~= computedRectangle;
 		void*[] pre;
 		foreach (i, child; children)
 			pre ~= preLayout(i, child, hierarchy);
@@ -422,7 +608,7 @@ class FloatingLayout : Layout
 
 	override void layout(size_t i, ref RawWidget widget, Container[] hierarchy, void* prepass)
 	{
-		widget.computedRectangle = widget.rectangle;
+		widget.computedRectangle = .layout(widget.rectangle, hierarchy);
 	}
 }
 
@@ -438,16 +624,33 @@ class LinearLayout : Layout
 
 	override void prepareLayout(Container[] hierarchy, void*[] preparation)
 	{
-		x = y = maxH = lastMargin = 0;
+		x = y = curOrtho = maxOrtho = maxOrthoMargin = lastMargin = 0;
+		first = true;
 	}
 
 	override void layout(size_t i, ref RawWidget widget, Container[] hierarchy, void* prepass)
 	{
+		import std.stdio;
+
 		auto size = .layout(widget.rectangle, hierarchy);
-		auto margin = .layout(widget.margin, hierarchy);
+		auto margin = .layout!true(widget.margin, hierarchy);
+		int xMod, yMod;
 		final switch (direction)
 		{
 		case Direction.horizontal:
+			auto effMargin = max(lastMargin, margin.x);
+			lastMargin = margin.right;
+			x += effMargin;
+			y = curOrtho + margin.y;
+			maxOrtho = max(maxOrtho, margin.bottom + size.h);
+			xMod = size.w;
+			if (x + xMod > computedRectangle.w && !first)
+			{
+				x = margin.x;
+				y += maxOrtho;
+				curOrtho += maxOrtho;
+				maxOrtho = 0;
+			}
 			break;
 		case Direction.vertical:
 			break;
@@ -456,6 +659,10 @@ class LinearLayout : Layout
 		case Direction.verticalReverse:
 			break;
 		}
+		widget.computedRectangle = Container(x, y, size.w, size.h);
+		x += xMod;
+		y += yMod;
+		first = false;
 	}
 
 	Direction direction;
@@ -463,6 +670,7 @@ class LinearLayout : Layout
 private:
 	int x, y;
 	int offX, offY;
-	int maxH;
-	int lastMargin;
+	int curOrtho, maxOrtho;
+	int lastMargin, maxOrthoMargin;
+	bool first;
 }
