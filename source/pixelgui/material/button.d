@@ -48,9 +48,12 @@ class MaterialButton : ButtonBehavior!FastWidget
 	{
 		Color background;
 		if (isHovered || isFocused)
-			background = blend(color.focusShade, color.normalColor);
-		else if (isActive)
-			background = color.pressedColor;
+		{
+			if (isActive)
+				background = blend(color.focusShade, color.pressedColor);
+			else
+				background = blend(color.focusShade, color.normalColor);
+		}
 		else
 			background = color.normalColor;
 		if (raised)
