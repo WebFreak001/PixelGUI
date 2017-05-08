@@ -625,6 +625,16 @@ class LinearLayout : Layout
 	override void prepareLayout(Container[] hierarchy, void*[] preparation)
 	{
 		x = y = curOrtho = maxOrtho = maxOrthoMargin = lastMargin = 0;
+		final switch (direction)
+		{
+		case Direction.horizontal:
+		case Direction.vertical:
+		case Direction.verticalReverse:
+			break;
+		case Direction.horizontalReverse:
+			x = computedRectangle.w;
+			break;
+		}
 		first = true;
 	}
 
@@ -650,9 +660,21 @@ class LinearLayout : Layout
 				maxOrtho = 0;
 			}
 			break;
-		case Direction.vertical:
-			break;
 		case Direction.horizontalReverse:
+			auto effMargin = max(lastMargin, margin.right);
+			lastMargin = margin.x;
+			x -= effMargin + size.w;
+			y = curOrtho + margin.y;
+			maxOrtho = max(maxOrtho, margin.bottom + size.h);
+			if (x - lastMargin < 0 && !first)
+			{
+				x = computedRectangle.w - effMargin - size.w;
+				y += maxOrtho;
+				curOrtho += maxOrtho;
+				maxOrtho = 0;
+			}
+			break;
+		case Direction.vertical:
 			break;
 		case Direction.verticalReverse:
 			break;
