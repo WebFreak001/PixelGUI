@@ -43,21 +43,25 @@ void main()
 	DerelictSDL2.load(SharedLibVersion(2, 0, 2));
 
 	auto gui = makePixelGUI;
-	auto window = gui.newRootWidget!LinearLayout(14 * 20 + 10, 19 * 20 + 10);
+	auto window = gui.newRootWidget!CenterLayout(853, 480);
 
-	window.padding = Rectangle(4.px);
+	auto colorPalette = new LinearLayout();
+	colorPalette.rectangle = Rectangle.size(14 * 20 + 10, 19 * 20 + 10);
+	colorPalette.padding = Rectangle(4.px);
+
+	window.addChild(colorPalette);
 
 	void addButton(string color)()
 	{
 		auto button = new MaterialButton();
-		button.rectangle = Rectangle(0.px, 18.px, 18.px, 0.px);
+		button.rectangle = Rectangle.size(18, 18);
 		button.padding = Rectangle(0.px);
 		button.margin = Rectangle(2.px);
 		button.color = makeButtonColor!color;
 		button.onClick ~= () {
 			writeln(color, ": ", button.color.normalColor.toColorHexString);
 		};
-		window.addChild(button);
+		colorPalette.addChild(button);
 	}
 
 	foreach (color; __traits(allMembers, MaterialColors))
