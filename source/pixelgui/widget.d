@@ -554,6 +554,11 @@ abstract class ManagedWidget : RawWidget
 
 abstract class Layout : RawWidget
 {
+	override bool isTransparent() const @property
+	{
+		return true;
+	}
+
 	override void finalDraw(ref RenderTarget dest, Container[] hierarchy)
 	{
 		if (!shouldRedraw)
