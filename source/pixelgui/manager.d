@@ -13,6 +13,7 @@ class RootWidget(T : RawWidget) : T
 
 	string name;
 	bool resizable = true;
+	Color backgroundColor = HTMLColors.white;
 
 	void redrawRect(int x, int y, int w, int h)
 	{
@@ -23,7 +24,7 @@ class RootWidget(T : RawWidget) : T
 	bool draw()
 	{
 		if (requiresRedraw)
-			target.clearFast(HTMLColors.white);
+			target.clearFast(backgroundColor);
 		if (shouldRedraw)
 		{
 			computedRectangle = Container(0, 0, width, height);

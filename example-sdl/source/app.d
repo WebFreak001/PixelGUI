@@ -24,7 +24,8 @@ void main()
 		button.margin = Rectangle(2.px);
 		button.color = makeButtonColor!color;
 		button.onClick ~= () {
-			writeln(color, ": ", button.color.normalColor.toColorHexString);
+			window.backgroundColor = button.color.normalColor;
+			window.redraw();
 		};
 		colorPalette.addChild(button);
 	}
