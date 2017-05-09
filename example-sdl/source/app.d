@@ -28,10 +28,7 @@ void main()
 		button.padding = Rectangle(0.px);
 		button.margin = Rectangle(2.px);
 		button.color = makeButtonColor!color;
-		button.onClick ~= () {
-			window.backgroundColor = button.color.normalColor;
-			window.redraw();
-		};
+		button.onClick ~= () { window.backgroundColor = button.color.normalColor; };
 		colorPalette.addChild(button);
 	}
 

@@ -8,11 +8,11 @@ import tinyevent;
 
 abstract class ButtonBehavior(BaseWidget : RawWidget) : BaseWidget
 {
-	bool isHovered;
-	bool isMouseActive;
-	bool isKeyboardActive;
+	mixin RedrawProperty!(bool, "isHovered");
+	mixin RedrawProperty!(bool, "isMouseActive");
+	mixin RedrawProperty!(bool, "isKeyboardActive");
 
-	bool canReceiveFocus = true;
+	bool _canReceiveFocus = true;
 
 	Event!() onClick;
 
@@ -34,28 +34,19 @@ abstract class ButtonBehavior(BaseWidget : RawWidget) : BaseWidget
 	void mouseMove(int, int)
 	{
 		if (!isHovered)
-		{
-			redraw();
 			isHovered = true;
-		}
 	}
 
 	void unhover()
 	{
 		if (isHovered)
-		{
 			isHovered = false;
-			redraw();
-		}
 	}
 
 	void mouseDown(int, int, MouseButton button, int)
 	{
 		if (button == MouseButton.left)
-		{
 			isMouseActive = true;
-			redraw();
-		}
 	}
 
 	void mouseUp(int, int, MouseButton button)
@@ -65,17 +56,13 @@ abstract class ButtonBehavior(BaseWidget : RawWidget) : BaseWidget
 			if (isHovered && isMouseActive)
 				onClick.emit();
 			isMouseActive = false;
-			redraw();
 		}
 	}
 
 	void keyDown(int, int, Key key, int)
 	{
 		if (isFocused && (key == Key.enter || key == Key.space))
-		{
 			isKeyboardActive = true;
-			redraw();
-		}
 	}
 
 	void keyUp(int, int, Key key)
@@ -85,7 +72,6 @@ abstract class ButtonBehavior(BaseWidget : RawWidget) : BaseWidget
 			if (isFocused && isKeyboardActive)
 				onClick.emit();
 			isKeyboardActive = false;
-			redraw();
 		}
 	}
 }

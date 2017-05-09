@@ -13,7 +13,7 @@ class RootWidget(T : RawWidget) : T
 
 	string name;
 	bool resizable = true;
-	Color backgroundColor = HTMLColors.white;
+	mixin RedrawProperty!(Color, "backgroundColor", HTMLColors.white);
 
 	void redrawRect(int x, int y, int w, int h)
 	{

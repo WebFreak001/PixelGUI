@@ -266,18 +266,25 @@ Container layout(bool rectangle = false)(Rectangle r, Container[] hierarchy,
 		return hierarchy[$ - 1].push(top, right, bottom, left, overflow);
 }
 
+mixin template RedrawProperty(T, string name, T defaultValue = T.init)
+{
+	mixin("auto " ~ name ~ "() const @property { return _" ~ name ~ "; }");
+	mixin("T " ~ name ~ "(T val) @property { _" ~ name ~ " = val; redraw(); return _" ~ name ~ "; }");
+	mixin("T _" ~ name ~ " = defaultValue;");
+}
+
 abstract class RawWidget
 {
-	Rectangle rectangle = Rectangle.full;
-	Rectangle margin;
-	Rectangle padding;
+	mixin RedrawProperty!(Rectangle, "rectangle", Rectangle.full);
+	mixin RedrawProperty!(Rectangle, "margin");
+	mixin RedrawProperty!(Rectangle, "padding");
 	RawWidget parent;
-	RawWidget[] children;
-	Overflow overflow;
+	mixin RedrawProperty!(RawWidget[], "children");
+	mixin RedrawProperty!(Overflow, "overflow");
 	bool requiresRedraw = true;
-	bool hasLocalFocus = false;
-	bool hasGlobalFocus = false;
-	bool canReceiveFocus = false;
+	mixin RedrawProperty!(bool, "hasLocalFocus");
+	mixin RedrawProperty!(bool, "hasGlobalFocus");
+	mixin RedrawProperty!(bool, "canReceiveFocus");
 	bool hadHover = false;
 
 	Container computedRectangle;
@@ -308,14 +315,14 @@ abstract class RawWidget
 		requiresRedraw = true;
 		if (isTransparent && parent)
 			parent.redraw();
-		foreach (ref child; children)
+		foreach (ref child; _children)
 			child.redraw();
 	}
 
 	void clearDrawQueue()
 	{
 		requiresRedraw = false;
-		foreach (ref child; children)
+		foreach (ref child; _children)
 			child.clearDrawQueue();
 	}
 
@@ -324,7 +331,7 @@ abstract class RawWidget
 		enforce(widget.parent is null, "Can't add widget to two different containers");
 		widget.parent = this;
 		widget.redraw();
-		children ~= widget;
+		_children ~= widget;
 	}
 
 	bool isFocused() const @property
@@ -370,7 +377,7 @@ abstract class RawWidget
 	{
 		onFocus.emit();
 		hasGlobalFocus = true;
-		foreach (child; children)
+		foreach (child; _children)
 			child.handleFocus();
 	}
 
@@ -378,7 +385,7 @@ abstract class RawWidget
 	{
 		onUnfocus.emit();
 		hasGlobalFocus = false;
-		foreach (child; children)
+		foreach (child; _children)
 			child.handleUnfocus();
 	}
 
@@ -413,7 +420,7 @@ abstract class RawWidget
 		if (!parent || x > computedRectangle.x && x <= computedRectangle.x + computedRectangle.w
 				&& y > computedRectangle.y && y <= computedRectangle.y + computedRectangle.h)
 		{
-			foreach_reverse (child; children)
+			foreach_reverse (child; _children)
 				if (child.handleMouseMove(x, y))
 				{
 					if (hadHover)
@@ -437,7 +444,7 @@ abstract class RawWidget
 		if (!parent || x > computedRectangle.x && x <= computedRectangle.x + computedRectangle.w
 				&& y > computedRectangle.y && y <= computedRectangle.y + computedRectangle.h)
 		{
-			foreach_reverse (child; children)
+			foreach_reverse (child; _children)
 				if (child.handleMouseDown(x, y, button, clicks))
 				{
 					if (hadHover)
@@ -460,7 +467,7 @@ abstract class RawWidget
 		if (!parent || x > computedRectangle.x && x <= computedRectangle.x + computedRectangle.w
 				&& y > computedRectangle.y && y <= computedRectangle.y + computedRectangle.h)
 		{
-			foreach_reverse (child; children)
+			foreach_reverse (child; _children)
 				if (child.handleMouseUp(x, y, button))
 				{
 					if (hadHover)
@@ -509,7 +516,7 @@ abstract class FastWidget : RawWidget
 		if (overflow != Overflow.hidden || (rect.w > 0 && rect.h > 0))
 		{
 			hierarchy ~= rect;
-			foreach (child; children)
+			foreach (child; _children)
 			{
 				child.computedRectangle = layout(child.rectangle, hierarchy, Overflow.hidden);
 				child.finalDraw(dest, hierarchy);
@@ -539,7 +546,7 @@ abstract class ManagedWidget : RawWidget
 			rect.w -= computedPadding.x + computedPadding.right;
 			rect.h -= computedPadding.y + computedPadding.bottom;
 			hierarchy ~= rect;
-			foreach (child; children)
+			foreach (child; _children)
 			{
 				child.computedRectangle = layout(child.rectangle, hierarchy, Overflow.hidden);
 				child.computedRectangle.x -= rect.x;
@@ -575,10 +582,10 @@ abstract class Layout : RawWidget
 		rect.h -= computedPadding.y + computedPadding.bottom;
 		hierarchy ~= rect;
 		void*[] pre;
-		foreach (i, child; children)
+		foreach (i, child; _children)
 			pre ~= preLayout(i, child, hierarchy);
 		prepareLayout(hierarchy, pre);
-		foreach (i, child; children)
+		foreach (i, child; _children)
 		{
 			layout(i, child, hierarchy, pre[i]);
 			child.finalDraw(dest, hierarchy);

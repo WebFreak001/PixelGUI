@@ -34,9 +34,9 @@ MaterialButtonColor makeButtonColor(string colorName)()
 class MaterialButton : ButtonBehavior!FastWidget
 {
 	/// Color scheme for the button
-	MaterialButtonColor color = makeButtonColor!materialDefaultPrimaryName;
+	mixin RedrawProperty!(MaterialButtonColor, "color", makeButtonColor!materialDefaultPrimaryName);
 	/// If true, background will be filled with color
-	bool raised = true;
+	mixin RedrawProperty!(bool, "raised", true);
 
 	override bool isTransparent() const @property
 	{
