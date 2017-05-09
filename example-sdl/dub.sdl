@@ -1,4 +1,4 @@
 name "example-sdl"
 
 dependency "pixelgui" path=".."
-dependency "derelict-sdl2" version="~>2.1.3"
+dependency "pixel-sdl" path="../pixel-sdl"

@@ -11,6 +11,9 @@ class RootWidget(T : RawWidget) : T
 {
 	RenderTarget target;
 
+	string name;
+	bool resizable = true;
+
 	void redrawRect(int x, int y, int w, int h)
 	{
 		// TODO: only update in rect
