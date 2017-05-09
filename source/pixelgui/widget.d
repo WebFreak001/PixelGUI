@@ -410,8 +410,8 @@ abstract class RawWidget
 
 	bool handleMouseMove(int x, int y)
 	{
-		if (!parent || x >= computedRectangle.x && x < computedRectangle.x + computedRectangle.w
-				&& y >= computedRectangle.y && y < computedRectangle.y + computedRectangle.h)
+		if (!parent || x > computedRectangle.x && x <= computedRectangle.x + computedRectangle.w
+				&& y > computedRectangle.y && y <= computedRectangle.y + computedRectangle.h)
 		{
 			foreach_reverse (child; children)
 				if (child.handleMouseMove(x, y))
@@ -434,8 +434,8 @@ abstract class RawWidget
 
 	bool handleMouseDown(int x, int y, MouseButton button, int clicks)
 	{
-		if (!parent || x >= computedRectangle.x && x < computedRectangle.x + computedRectangle.w
-				&& y >= computedRectangle.y && y < computedRectangle.y + computedRectangle.h)
+		if (!parent || x > computedRectangle.x && x <= computedRectangle.x + computedRectangle.w
+				&& y > computedRectangle.y && y <= computedRectangle.y + computedRectangle.h)
 		{
 			foreach_reverse (child; children)
 				if (child.handleMouseDown(x, y, button, clicks))
@@ -457,8 +457,8 @@ abstract class RawWidget
 
 	bool handleMouseUp(int x, int y, MouseButton button)
 	{
-		if (!parent || x >= computedRectangle.x && x < computedRectangle.x + computedRectangle.w
-				&& y >= computedRectangle.y && y < computedRectangle.y + computedRectangle.h)
+		if (!parent || x > computedRectangle.x && x <= computedRectangle.x + computedRectangle.w
+				&& y > computedRectangle.y && y <= computedRectangle.y + computedRectangle.h)
 		{
 			foreach_reverse (child; children)
 				if (child.handleMouseUp(x, y, button))
@@ -501,13 +501,14 @@ abstract class FastWidget : RawWidget
 		if (requiresRedraw)
 			draw(dest, computedRectangle);
 		auto computedPadding = layout!true(padding, hierarchy);
-		computedRectangle.x += computedPadding.x;
-		computedRectangle.y += computedPadding.y;
-		computedRectangle.w -= computedPadding.x + computedPadding.right;
-		computedRectangle.h -= computedPadding.y + computedPadding.bottom;
-		if (overflow != Overflow.hidden || (computedRectangle.w > 0 && computedRectangle.h > 0))
+		auto rect = computedRectangle;
+		rect.x += computedPadding.x;
+		rect.y += computedPadding.y;
+		rect.w -= computedPadding.x + computedPadding.right;
+		rect.h -= computedPadding.y + computedPadding.bottom;
+		if (overflow != Overflow.hidden || (rect.w > 0 && rect.h > 0))
 		{
-			hierarchy ~= computedRectangle;
+			hierarchy ~= rect;
 			foreach (child; children)
 			{
 				child.computedRectangle = layout(child.rectangle, hierarchy, Overflow.hidden);
@@ -532,17 +533,20 @@ abstract class ManagedWidget : RawWidget
 			draw(img);
 			img.copyTo(dest, computedRectangle.x, computedRectangle.y);
 			auto computedPadding = .layout!true(padding, hierarchy);
-			computedRectangle.x += computedPadding.x;
-			computedRectangle.y += computedPadding.y;
-			computedRectangle.w -= computedPadding.x + computedPadding.right;
-			computedRectangle.h -= computedPadding.y + computedPadding.bottom;
-			hierarchy ~= computedRectangle;
+			auto rect = computedRectangle;
+			rect.x += computedPadding.x;
+			rect.y += computedPadding.y;
+			rect.w -= computedPadding.x + computedPadding.right;
+			rect.h -= computedPadding.y + computedPadding.bottom;
+			hierarchy ~= rect;
 			foreach (child; children)
 			{
 				child.computedRectangle = layout(child.rectangle, hierarchy, Overflow.hidden);
-				child.computedRectangle.x -= computedRectangle.x;
-				child.computedRectangle.y -= computedRectangle.y;
+				child.computedRectangle.x -= rect.x;
+				child.computedRectangle.y -= rect.y;
 				child.finalDraw(dest, hierarchy);
+				child.computedRectangle.x += rect.x;
+				child.computedRectangle.y += rect.y;
 			}
 		}
 	}
@@ -564,11 +568,12 @@ abstract class Layout : RawWidget
 		if (!shouldRedraw)
 			return;
 		auto computedPadding = .layout!true(padding, hierarchy);
-		computedRectangle.x += computedPadding.x;
-		computedRectangle.y += computedPadding.y;
-		computedRectangle.w -= computedPadding.x + computedPadding.right;
-		computedRectangle.h -= computedPadding.y + computedPadding.bottom;
-		hierarchy ~= computedRectangle;
+		auto rect = computedRectangle;
+		rect.x += computedPadding.x;
+		rect.y += computedPadding.y;
+		rect.w -= computedPadding.x + computedPadding.right;
+		rect.h -= computedPadding.y + computedPadding.bottom;
+		hierarchy ~= rect;
 		void*[] pre;
 		foreach (i, child; children)
 			pre ~= preLayout(i, child, hierarchy);
@@ -644,6 +649,7 @@ class LinearLayout : Layout
 
 	override void layout(size_t i, ref RawWidget widget, Container[] hierarchy, void* prepass)
 	{
+		auto rect = hierarchy[$ - 1];
 		auto size = .layout(widget.rectangle, hierarchy);
 		auto margin = .layout!true(widget.margin, hierarchy);
 		int xMod, yMod;
@@ -656,7 +662,7 @@ class LinearLayout : Layout
 			y = curOrtho + margin.y;
 			maxOrtho = max(maxOrtho, margin.bottom + size.h);
 			xMod = size.w;
-			if (x + xMod + lastMargin > computedRectangle.w && !first)
+			if (x + xMod + lastMargin > rect.w && !first)
 			{
 				x = margin.x;
 				y += maxOrtho;
@@ -672,7 +678,7 @@ class LinearLayout : Layout
 			maxOrtho = max(maxOrtho, margin.bottom + size.h);
 			if (x - lastMargin < 0 && !first)
 			{
-				x = computedRectangle.w - effMargin - size.w;
+				x = rect.w - effMargin - size.w;
 				y += maxOrtho;
 				curOrtho += maxOrtho;
 				maxOrtho = 0;
@@ -685,7 +691,7 @@ class LinearLayout : Layout
 			x = curOrtho + margin.x;
 			maxOrtho = max(maxOrtho, margin.right + size.w);
 			yMod = size.h;
-			if (y + yMod + lastMargin > computedRectangle.h && !first)
+			if (y + yMod + lastMargin > rect.h && !first)
 			{
 				y = margin.y;
 				x += maxOrtho;
@@ -701,15 +707,14 @@ class LinearLayout : Layout
 			maxOrtho = max(maxOrtho, margin.right + size.w);
 			if (y - lastMargin < 0 && !first)
 			{
-				y = computedRectangle.h - effMargin - size.h;
+				y = rect.h - effMargin - size.h;
 				x += maxOrtho;
 				curOrtho += maxOrtho;
 				maxOrtho = 0;
 			}
 			break;
 		}
-		widget.computedRectangle = Container(computedRectangle.x + x,
-				computedRectangle.y + y, size.w, size.h);
+		widget.computedRectangle = Container(rect.x + x, rect.y + y, size.w, size.h);
 		x += xMod;
 		y += yMod;
 		first = false;

@@ -16,6 +16,11 @@ void main()
 
 	window.addChild(colorPalette);
 
+	auto overlay = new MaterialButton();
+	overlay.rectangle = Rectangle.size(100, 64);
+	overlay.padding = Rectangle(16.px);
+	window.addChild(overlay);
+
 	void addButton(string color)()
 	{
 		auto button = new MaterialButton();
