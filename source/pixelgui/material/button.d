@@ -40,8 +40,8 @@ class MaterialButton : ButtonBehavior!FastWidget
 
 	override bool isTransparent() const @property
 	{
-		return color.normalColor[3] != 0xFF || color.pressedColor[3] != 0xFF
-			|| color.focusShade[3] != 0xFF;
+		return !raised || color.normalColor[3] != 0xFF
+			|| color.pressedColor[3] != 0xFF || color.focusShade[3] != 0xFF;
 	}
 
 	override void draw(ref RenderTarget dest, Container mask)
