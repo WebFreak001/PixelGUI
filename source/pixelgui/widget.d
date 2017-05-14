@@ -286,8 +286,10 @@ abstract class RawWidget
 	mixin RedrawProperty!(bool, "hasGlobalFocus");
 	mixin RedrawProperty!(bool, "canReceiveFocus");
 	bool hadHover = false;
+	mixin RedrawProperty!(bool, "opaqueHover");
 
 	Container computedRectangle;
+	Container[] hierarchy;
 
 	abstract void finalDraw(ref RenderTarget dest, Container[] hierarchy);
 
@@ -421,7 +423,7 @@ abstract class RawWidget
 				&& y > computedRectangle.y && y <= computedRectangle.y + computedRectangle.h)
 		{
 			foreach_reverse (child; _children)
-				if (child.handleMouseMove(x, y))
+				if (child.handleMouseMove(x, y) && child.opaqueHover)
 				{
 					if (hadHover)
 						handleUnhover();
@@ -445,7 +447,7 @@ abstract class RawWidget
 				&& y > computedRectangle.y && y <= computedRectangle.y + computedRectangle.h)
 		{
 			foreach_reverse (child; _children)
-				if (child.handleMouseDown(x, y, button, clicks))
+				if (child.handleMouseDown(x, y, button, clicks) && child.opaqueHover)
 				{
 					if (hadHover)
 						handleUnhover();
@@ -468,7 +470,7 @@ abstract class RawWidget
 				&& y > computedRectangle.y && y <= computedRectangle.y + computedRectangle.h)
 		{
 			foreach_reverse (child; _children)
-				if (child.handleMouseUp(x, y, button))
+				if (child.handleMouseUp(x, y, button) && child.opaqueHover)
 				{
 					if (hadHover)
 						handleUnhover();
@@ -505,6 +507,7 @@ abstract class FastWidget : RawWidget
 {
 	override void finalDraw(ref RenderTarget dest, Container[] hierarchy)
 	{
+		this.hierarchy = hierarchy;
 		if (requiresRedraw)
 			draw(dest, computedRectangle);
 		auto computedPadding = layout!true(padding, hierarchy);
@@ -531,6 +534,7 @@ abstract class ManagedWidget : RawWidget
 {
 	override void finalDraw(ref RenderTarget dest, Container[] hierarchy)
 	{
+		this.hierarchy = hierarchy;
 		if (computedRectangle.w > 0 && computedRectangle.h > 0 && shouldRedraw)
 		{
 			RenderTarget img;
@@ -572,6 +576,7 @@ abstract class Layout : RawWidget
 
 	override void finalDraw(ref RenderTarget dest, Container[] hierarchy)
 	{
+		this.hierarchy = hierarchy;
 		if (!shouldRedraw)
 			return;
 		auto computedPadding = .layout!true(padding, hierarchy);

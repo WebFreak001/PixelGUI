@@ -12,12 +12,12 @@ abstract class ButtonBehavior(BaseWidget : RawWidget) : BaseWidget
 	mixin RedrawProperty!(bool, "isMouseActive");
 	mixin RedrawProperty!(bool, "isKeyboardActive");
 
-	bool _canReceiveFocus = true;
-
 	Event!() onClick;
 
 	this()
 	{
+		_canReceiveFocus = true;
+		_opaqueHover = true;
 		onMouseMove ~= &mouseMove;
 		onUnhover ~= &unhover;
 		onMouseDown ~= &mouseDown;
