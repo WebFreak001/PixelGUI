@@ -266,6 +266,13 @@ Container layout(bool rectangle = false)(Rectangle r, Container[] hierarchy,
 		return hierarchy[$ - 1].push(top, right, bottom, left, overflow);
 }
 
+struct PropertyStore
+{
+	Length[string] lengthProperties;
+	Color[string] colorProperties;
+	string[string] stringProperties;
+}
+
 mixin template RedrawProperty(T, string name, T defaultValue = T.init)
 {
 	mixin("auto " ~ name ~ "() const @property { return _" ~ name ~ "; }");
@@ -273,8 +280,52 @@ mixin template RedrawProperty(T, string name, T defaultValue = T.init)
 	mixin("T _" ~ name ~ " = defaultValue;");
 }
 
+import std.string : capitalize;
+
+mixin template RedrawInheritableProperty(T, string name, string typeName = T.stringof.capitalize)
+{
+	mixin("auto " ~ name ~ "() const @property { return get" ~ typeName ~ "Property(name); }");
+	mixin(
+			"T " ~ name ~ "(T val) @property { set" ~ typeName
+			~ "Property(name, val); redraw(); return val; }");
+}
+
+private string generatePropertyShortcuts(T...)()
+{
+	import std.string : capitalize;
+
+	string ret;
+	foreach (arg; T)
+	{
+		char[] lowercase = arg.capitalize.dup;
+		lowercase[0] -= 'A' - 'a';
+		ret ~= `auto get` ~ arg.capitalize ~ `Property(string name) const
+		{
+			auto ptr = name in extraProperties.` ~ lowercase
+			~ `Properties;
+			if (ptr)
+				return *ptr;
+			else if (parent)
+				return parent.get` ~ arg.capitalize ~ `Property(name);
+			else
+				return typeof(return).init;
+		}
+
+		void set` ~ arg.capitalize
+			~ `Property(string name, ` ~ arg ~ ` value)
+		{
+			extraProperties.` ~ lowercase
+			~ `Properties[name] = value;
+		}`;
+	}
+	return ret;
+}
+
 abstract class RawWidget
 {
+	PropertyStore extraProperties;
+	mixin(generatePropertyShortcuts!("Length", "Color", "string"));
+
 	mixin RedrawProperty!(Rectangle, "rectangle", Rectangle.full);
 	mixin RedrawProperty!(Rectangle, "margin");
 	mixin RedrawProperty!(Rectangle, "padding");
