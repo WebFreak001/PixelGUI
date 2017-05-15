@@ -15,6 +15,13 @@ class RootWidget(T : RawWidget) : T
 	bool resizable = true;
 	mixin RedrawProperty!(Color, "backgroundColor", HTMLColors.white);
 
+	this()
+	{
+		setColorProperty("textColor", col!"000000dd");
+		setLengthProperty("fontSize", 1.em);
+		setStringProperty("fontStyle", "Regular");
+	}
+
 	void redrawRect(int x, int y, int w, int h)
 	{
 		// TODO: only update in rect

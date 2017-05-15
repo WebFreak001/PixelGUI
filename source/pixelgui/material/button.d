@@ -35,8 +35,17 @@ class MaterialButton : ButtonBehavior!FastWidget
 {
 	/// Color scheme for the button
 	mixin RedrawProperty!(MaterialButtonColor, "color", makeButtonColor!materialDefaultPrimaryName);
+	/// Text color
+	mixin RedrawInheritableProperty!(Color, "foreground", "Color");
 	/// If true, background will be filled with color
 	mixin RedrawProperty!(bool, "raised", true);
+
+	this()
+	{
+		super();
+		foreground = HTMLColors.white;
+		setStringProperty("fontStyle", "Bold");
+	}
 
 	override bool isTransparent() const @property
 	{
@@ -66,6 +75,9 @@ class MaterialButton : ButtonBehavior!FastWidget
 				dest.fillRect(mask.x, mask.y + 1, mask.w, mask.h - 2, background);
 				dest.fillRect(mask.x + 1, mask.y + mask.h - 1, mask.w - 2, 1, background);
 			}
+			setColorProperty("textColor", foreground);
 		}
+		else
+			setColorProperty("textColor", color.normalColor);
 	}
 }
