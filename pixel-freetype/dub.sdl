@@ -1,0 +1,4 @@
+name "pixel-freetype"
+
+dependency "pixelgui" path=".."
+dependency "derelict-ft" version="~>1.1.3"

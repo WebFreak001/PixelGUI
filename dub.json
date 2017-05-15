@@ -10,6 +10,8 @@
 		"eventsystem": "~>1.2.0"
 	},
 	"subPackages": [
-		"pixel-sdl"
+		"pixel-sdl",
+		"pixel-fontconfig",
+		"pixel-freetype"
 	]
 }
