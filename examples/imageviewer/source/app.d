@@ -13,6 +13,14 @@ FreeTypeFontFamily font;
 
 void text(MaterialButton button, string text)
 {
+	foreach (child; button.children)
+	{
+		if (cast(TextWidget) child)
+		{
+			(cast(TextWidget) child).text = text;
+			return;
+		}
+	}
 	button.clearChildren();
 	auto content = new TextWidget();
 	content.font = font;
@@ -63,12 +71,20 @@ void main(string[] args)
 	btnSlideshow.color = MaterialButtonColor(col!"FFFFFF");
 	btnSlideshow.raised = false;
 	btnSlideshow.padding = Rectangle(12.px);
-	btnSlideshow.text = "Slideshow";
+	btnSlideshow.text = "Start Slideshow";
 	btnSlideshow.marginBottom = 4.px;
 	btnSlideshow.onClick ~= () {
 		if (slideshowInterval)
+		{
+			btnSlideshow.text = "Start Slideshow";
 			clearInterval(slideshowInterval);
-		slideshowInterval = setInterval(() { offsetImage(1); }, 8000);
+		}
+		else
+		{
+			btnSlideshow.text = "Stop Slideshow";
+			offsetImage(1);
+			slideshowInterval = setInterval(() { offsetImage(1); }, 8000);
+		}
 	};
 	sidebar.addChild(btnSlideshow);
 
@@ -78,7 +94,11 @@ void main(string[] args)
 	btnNext.padding = Rectangle(12.px);
 	btnNext.text = "Next";
 	btnNext.marginBottom = 4.px;
-	btnNext.onClick ~= () { offsetImage(1); };
+	btnNext.onClick ~= () {
+		if (slideshowInterval)
+			resetInterval(slideshowInterval);
+		offsetImage(1);
+	};
 	sidebar.addChild(btnNext);
 
 	auto btnPrev = new MaterialButton;
@@ -87,7 +107,11 @@ void main(string[] args)
 	btnPrev.padding = Rectangle(12.px);
 	btnPrev.text = "Previous";
 	btnPrev.marginBottom = 4.px;
-	btnPrev.onClick ~= () { offsetImage(-1); };
+	btnPrev.onClick ~= () {
+		if (slideshowInterval)
+			resetInterval(slideshowInterval);
+		offsetImage(-1);
+	};
 	sidebar.addChild(btnPrev);
 
 	bitmap = new Bitmap;
