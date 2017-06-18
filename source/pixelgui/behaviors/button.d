@@ -18,6 +18,7 @@ abstract class ButtonBehavior(BaseWidget : RawWidget) : BaseWidget
 	{
 		_canReceiveFocus = true;
 		_opaqueHover = true;
+		_rectangle = Rectangle.size(100.percent, 48.px);
 		onMouseMove ~= &mouseMove;
 		onUnhover ~= &unhover;
 		onMouseDown ~= &mouseDown;
