@@ -171,6 +171,8 @@ void runWithSDL(T)(ref PixelGUI gui, ref RootWidget!T window)
 			}
 		}
 
+		dispatcher.tick;
+
 		if (window.draw)
 		{
 			SDL_UpdateTexture(sdl.texture, null, window.target.pixels.ptr, window.width * 4);
