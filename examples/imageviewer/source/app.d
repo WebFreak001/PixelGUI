@@ -21,7 +21,6 @@ void text(MaterialButton button, string text)
 			return;
 		}
 	}
-	button.clearChildren();
 	auto content = new TextWidget();
 	content.font = font;
 	content.text = text;
@@ -78,6 +77,7 @@ void main(string[] args)
 		{
 			btnSlideshow.text = "Start Slideshow";
 			clearInterval(slideshowInterval);
+			slideshowInterval = 0;
 		}
 		else
 		{
