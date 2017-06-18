@@ -8,3 +8,4 @@ import pixelgui.layouts.linear;
 import pixelgui.manager;
 import pixelgui.render;
 import pixelgui.widget;
+import pixelgui.widgets.solid;
