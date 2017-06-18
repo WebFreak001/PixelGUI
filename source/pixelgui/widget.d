@@ -5,7 +5,6 @@ import pixelgui.render;
 
 import tinyevent;
 
-import std.algorithm;
 import std.math;
 import std.exception;
 
@@ -280,6 +279,24 @@ mixin template RedrawProperty(T, string name, T defaultValue = T.init)
 	mixin("T _" ~ name ~ " = defaultValue;");
 }
 
+mixin template RectangleProperties(string p)
+{
+	mixin("auto " ~ p ~ "Top() const @property { return _" ~ p ~ ".top; }");
+	mixin("auto " ~ p ~ "Right() const @property { return _" ~ p ~ ".right; }");
+	mixin("auto " ~ p ~ "Bottom() const @property { return _" ~ p ~ ".bottom; }");
+	mixin("auto " ~ p ~ "Left() const @property { return _" ~ p ~ ".left; }");
+
+	mixin("auto " ~ p ~ "Top(Length v) @property { _" ~ p ~ ".top = v; redraw(); return v; }");
+	mixin("auto " ~ p ~ "Right(Length v) @property { _" ~ p ~ ".right = v; redraw(); return v; }");
+	mixin("auto " ~ p ~ "Bottom(Length v) @property { _" ~ p ~ ".bottom = v; redraw(); return v; }");
+	mixin("auto " ~ p ~ "Left(Length v) @property { _" ~ p ~ ".left = v; redraw(); return v; }");
+
+	mixin("auto " ~ p ~ "Top(int v) @property { _" ~ p ~ ".top = v.px; redraw(); return v.px; }");
+	mixin("auto " ~ p ~ "Right(int v) @property { _" ~ p ~ ".right = v.px; redraw(); return v.px; }");
+	mixin("auto " ~ p ~ "Bottom(int v) @property { _" ~ p ~ ".bottom = v.px; redraw(); return v.px; }");
+	mixin("auto " ~ p ~ "Left(int v) @property { _" ~ p ~ ".left = v.px; redraw(); return v.px; }");
+}
+
 import std.string : capitalize;
 
 mixin template RedrawInheritableProperty(T, string name, string typeName = T.stringof.capitalize)
@@ -292,8 +309,6 @@ mixin template RedrawInheritableProperty(T, string name, string typeName = T.str
 
 private string generatePropertyShortcuts(T...)()
 {
-	import std.string : capitalize;
-
 	string ret;
 	foreach (arg; T)
 	{
@@ -328,7 +343,9 @@ abstract class RawWidget
 
 	mixin RedrawProperty!(Rectangle, "rectangle", Rectangle.full);
 	mixin RedrawProperty!(Rectangle, "margin");
+	mixin RectangleProperties!("margin");
 	mixin RedrawProperty!(Rectangle, "padding");
+	mixin RectangleProperties!("padding");
 	RawWidget parent;
 	mixin RedrawProperty!(RawWidget[], "children");
 	mixin RedrawProperty!(Overflow, "overflow");
@@ -385,6 +402,12 @@ abstract class RawWidget
 		widget.parent = this;
 		widget.redraw();
 		_children ~= widget;
+	}
+
+	void clearChildren()
+	{
+		_children.length = 0;
+		redraw();
 	}
 
 	bool isFocused() const @property
