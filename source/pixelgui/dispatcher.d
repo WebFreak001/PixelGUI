@@ -84,3 +84,22 @@ bool clearTimeout(int id)
 
 /// ditto
 alias clearInterval = clearTimeout;
+
+/// Resets a timeout/interval counter to 0 seconds
+bool resetTimeout(int id)
+{
+	foreach (ref timeout; dispatcher.timeouts)
+	{
+		if (timeout.id == id)
+		{
+			timeout.sw.stop();
+			timeout.sw.reset();
+			timeout.sw.start();
+			return true;
+		}
+	}
+	return false;
+}
+
+/// ditto
+alias resetInterval = resetTimeout;
