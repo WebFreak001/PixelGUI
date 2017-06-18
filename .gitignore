@@ -7,4 +7,3 @@ __test__*__
 dub.selections.json
 /pixelgui*
 *.a
-example-sdl/example-sdl

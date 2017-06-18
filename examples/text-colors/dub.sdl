@@ -1,0 +1,8 @@
+name "text-colors"
+
+dependency "pixelgui" path="../../"
+dependency "pixelgui:pixel-fontconfig" path="../../"
+dependency "pixelgui:pixel-freetype" path="../../"
+dependency "pixelgui:pixel-sdl" path="../../"
+
+stringImportPaths "source"
