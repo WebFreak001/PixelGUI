@@ -1,0 +1,9 @@
+name "imageviewer"
+
+dependency "pixelgui" path="../../"
+dependency "pixelgui:pixel-fontconfig" path="../../"
+dependency "pixelgui:pixel-freetype" path="../../"
+dependency "pixelgui:pixel-sdl" path="../../"
+dependency "imageformats" version="~>6.1.0"
+
+stringImportPaths "source"
