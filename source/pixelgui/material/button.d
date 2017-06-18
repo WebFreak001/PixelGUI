@@ -59,25 +59,27 @@ class MaterialButton : ButtonBehavior!FastWidget
 		if (isHovered || isFocused)
 		{
 			if (isActive)
-				background = blend(color.focusShade, color.pressedColor);
+				background = blend(color.focusShade, raised ? color.pressedColor : ActiveBackgroundBase);
 			else
-				background = blend(color.focusShade, color.normalColor);
+				background = blend(color.focusShade, raised ? color.normalColor : HoveredBackgroundBase);
 		}
 		else
-			background = color.normalColor;
-		if (raised)
+			background = raised ? color.normalColor : RegularBackgroundBase;
+		if (mask.w < 4 || mask.h < 4)
+			dest.fillRect(mask.x, mask.y, mask.w, mask.h, background);
+		else
 		{
-			if (mask.w < 4 || mask.h < 4)
-				dest.fillRect(mask.x, mask.y, mask.w, mask.h, background);
-			else
-			{
-				dest.fillRect(mask.x + 1, mask.y, mask.w - 2, 1, background);
-				dest.fillRect(mask.x, mask.y + 1, mask.w, mask.h - 2, background);
-				dest.fillRect(mask.x + 1, mask.y + mask.h - 1, mask.w - 2, 1, background);
-			}
-			setColorProperty("textColor", foreground);
+			dest.fillRect(mask.x + 1, mask.y, mask.w - 2, 1, background);
+			dest.fillRect(mask.x, mask.y + 1, mask.w, mask.h - 2, background);
+			dest.fillRect(mask.x + 1, mask.y + mask.h - 1, mask.w - 2, 1, background);
 		}
+		if (raised)
+			setColorProperty("textColor", foreground);
 		else
 			setColorProperty("textColor", color.normalColor);
 	}
 }
+
+private enum Color RegularBackgroundBase = [0, 0, 0, 0];
+private enum Color ActiveBackgroundBase = [0, 0, 0, 0x20];
+private enum Color HoveredBackgroundBase = [0, 0, 0, 0x10];
