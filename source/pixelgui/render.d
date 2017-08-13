@@ -21,6 +21,20 @@ string toColorHexString(in Color color)
 		return '#' ~ digit(color[0]) ~ digit(color[1]) ~ digit(color[2]) ~ digit(color[3]);
 }
 
+/// Non-premultiplied color
+template colUnmul(string hex)
+{
+	static if (hex.length == 6)
+		enum colUnmul = cast(Color)[mixin("0x" ~ hex[0 .. 2]), mixin("0x" ~ hex[2 .. 4]),
+				mixin("0x" ~ hex[4 .. 6]), 0xFF];
+	else static if (hex.length == 8)
+		enum colUnmul = cast(Color)[mixin("0x" ~ hex[0 .. 2]), mixin("0x" ~ hex[2 .. 4]),
+				mixin("0x" ~ hex[4 .. 6]), mixin("0x" ~ hex[6 .. 8])];
+	else
+		static assert(false, "Hex color string '" ~ hex ~ "' not supported");
+}
+
+/// Premultiplied color
 template col(string hex)
 {
 	static if (hex.length == 6)
