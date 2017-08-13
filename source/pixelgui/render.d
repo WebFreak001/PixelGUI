@@ -410,6 +410,8 @@ void fillPattern(alias patternFun, BlendOp mixOp = BlendOp.over)(
 				const rgba = patternFun(c, v);
 			else
 				static assert(false, "Can't use pattern function which doesn't take 2/4/6 arguments.");
+			if (rgba == col!"FFFFFF00")
+				continue;
 			static if (mixOp == BlendOp.source)
 			{
 				(cast(uint[]) target.pixels)[x + c + (y + v) * target.w] = rgba.rgbaToMemory;
