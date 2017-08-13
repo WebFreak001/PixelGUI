@@ -3,6 +3,7 @@ module pixelgui.render;
 /// Premultiplied [R, G, B, A] color
 alias Color = ubyte[4];
 
+///
 string toColorHexString(in Color color)
 {
 	pragma(inline, true) immutable(char)[2] digit(ubyte b)
@@ -184,24 +185,29 @@ enum HTMLColors : Color
 	yellowGreen = col!"9ACD32",
 }
 
+/// Represents a drawable area
 struct RenderTarget
 {
+	/// Pixels in RGBA format
 	ubyte[] pixels;
+	/// in pixels
 	int w, h;
 }
 
 /// Alpha premultiply a color.
 Color premultiply(ubyte[4] rgba)
 {
-	ushort r = rgba[0] * rgba[3];
-	ushort g = rgba[1] * rgba[3];
-	ushort b = rgba[2] * rgba[3];
+	const ushort r = rgba[0] * rgba[3];
+	const ushort g = rgba[1] * rgba[3];
+	const ushort b = rgba[2] * rgba[3];
 	return [(r / 255) & 0xFF, (g / 255) & 0xFF, (b / 255) & 0xFF, rgba[3]];
 }
 
 /// Undo alpha premultiplication
 ubyte[4] demultiply(Color c)
 {
+	if (c[3] == 0)
+		return c;
 	auto r = c[0] * 255 / c[3];
 	auto g = c[1] * 255 / c[3];
 	auto b = c[2] * 255 / c[3];
