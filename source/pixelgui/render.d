@@ -199,6 +199,15 @@ Color premultiply(ubyte[4] rgba)
 	return [(r / 255) & 0xFF, (g / 255) & 0xFF, (b / 255) & 0xFF, rgba[3]];
 }
 
+/// Undo alpha premultiplication
+ubyte[4] demultiply(Color c)
+{
+	auto r = c[0] * 255 / c[3];
+	auto g = c[1] * 255 / c[3];
+	auto b = c[2] * 255 / c[3];
+	return [r & 0xFF, g & 0xFF, b & 0xFF, c[3]];
+}
+
 /// Blending operators (See https://www.cairographics.org/operators/)
 enum BlendOp
 {
@@ -343,6 +352,131 @@ void copyTo(BlendOp mixOp = BlendOp.over)(in RenderTarget src, ref RenderTarget 
 		0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0,
 	]);
 	//dfmt on
+}
+
+/// Fills a rectangle inside the image with a pattern.
+void fillPattern(alias patternFun, BlendOp mixOp = BlendOp.over)(
+		ref RenderTarget target, int x, int y, int w, int h)
+{
+	if (w <= 0 || h <= 0)
+		return;
+	if (x + w < 0 || y + h < 0 || x >= target.w || y >= target.h)
+		return;
+	if (x < 0)
+	{
+		w += x;
+		x = 0;
+	}
+	if (y < 0)
+	{
+		h += y;
+		y = 0;
+	}
+	if (w <= 0 || h <= 0)
+		return;
+	if (x + w > target.w)
+		w = target.w - x;
+	if (y + h > target.h)
+		h = target.h - y;
+	for (int v; v < h; v++)
+	{
+		for (int c; c < w; c++)
+		{
+			static if (__traits(compiles, { patternFun(c, v, x + c, y + v, w, h); }))
+				const rgba = patternFun(c, v, x + c, y + v, w, h);
+			else static if (__traits(compiles, { patternFun(c, v, w, h); }))
+				const rgba = patternFun(c, v, w, h);
+			else static if (__traits(compiles, { patternFun(c, v); }))
+				const rgba = patternFun(c, v);
+			else
+				static assert(false, "Can't use pattern function which doesn't take 2/4/6 arguments.");
+			static if (mixOp == BlendOp.source)
+			{
+				(cast(uint[]) target.pixels)[x + c + (y + v) * target.w] = rgba.rgbaToMemory;
+			}
+			else
+			{
+				auto blended = blend!mixOp(rgba, target.pixels[(
+						x + c + (y + v) * target.w) * 4 .. (x + c + (y + v) * target.w) * 4 + 4][0 .. 4]);
+				target.pixels[(x + c + (y + v) * target.w) * 4 + 0] = blended[0];
+				target.pixels[(x + c + (y + v) * target.w) * 4 + 1] = blended[1];
+				target.pixels[(x + c + (y + v) * target.w) * 4 + 2] = blended[2];
+				target.pixels[(x + c + (y + v) * target.w) * 4 + 3] = blended[3];
+			}
+		}
+	}
+}
+
+/// Draws a rectangle border with a solid color.
+void drawBorder(BlendOp mixOp = BlendOp.over)(ref RenderTarget target, int x,
+		int y, int w, int h, in Color rgba) pure nothrow @safe
+{
+	if (w <= 0 || h <= 0)
+		return;
+	if (x + w < 0 || y + h < 0 || x >= target.w || y >= target.h)
+		return;
+	if (x < 0)
+	{
+		w += x;
+		x = 0;
+	}
+	if (y < 0)
+	{
+		h += y;
+		y = 0;
+	}
+	if (w <= 0 || h <= 0)
+		return;
+	if (x + w > target.w)
+		w = target.w - x;
+	if (y + h > target.h)
+		h = target.h - y;
+	static if (mixOp == BlendOp.source)
+	{
+		uint color = rgba.rgbaToMemory;
+		(cast(uint[]) target.pixels[(x + y * target.w) * 4 .. (x + w + y * target.w) * 4])[] = color;
+		(cast(uint[]) target.pixels[(x + (y + h - 1) * target.w) * 4 .. (x + w + (y + h - 1) * target.w)
+				* 4])[] = color;
+		for (int v = 1; v < h - 1; v++)
+		{
+			(cast(uint[]) target.pixels)[x + (y + v) * target.w] = color;
+			(cast(uint[]) target.pixels)[x + w - 1 + (y + v) * target.w] = color;
+		}
+	}
+	else
+	{
+		foreach (v; [0, h - 1])
+		{
+			for (int c; c < w; c++)
+			{
+				auto i = (x + c + (y + v) * target.w) * 4;
+				auto blended = blend!mixOp(rgba, target.pixels[i .. i + 4][0 .. 4]);
+				target.pixels[i + 0] = blended[0];
+				target.pixels[i + 1] = blended[1];
+				target.pixels[i + 2] = blended[2];
+				target.pixels[i + 3] = blended[3];
+			}
+		}
+		for (int v = 1; v < h - 1; v++)
+		{
+			{
+				auto i = (x + (y + v) * target.w) * 4;
+				auto blended = blend!mixOp(rgba, target.pixels[i .. i + 4][0 .. 4]);
+				target.pixels[i + 0] = blended[0];
+				target.pixels[i + 1] = blended[1];
+				target.pixels[i + 2] = blended[2];
+				target.pixels[i + 3] = blended[3];
+			}
+			{
+				auto i = (x + w - 1 + (y + v) * target.w) * 4;
+				auto blended = blend!mixOp(rgba, target.pixels[i .. i + 4][0 .. 4]);
+				target.pixels[i + 0] = blended[0];
+				target.pixels[i + 1] = blended[1];
+				target.pixels[i + 2] = blended[2];
+				target.pixels[i + 3] = blended[3];
+			}
+		}
+	}
 }
 
 /// Fills a rectangle inside the image with a solid color.
