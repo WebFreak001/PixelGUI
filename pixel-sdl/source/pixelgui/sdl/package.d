@@ -182,3 +182,8 @@ void runWithSDL(T)(ref PixelGUI gui, ref RootWidget!T window)
 		SDL_Delay(0);
 	}
 }
+
+void captureMouse(bool enable)
+{
+	SDL_CaptureMouse(enable);
+}

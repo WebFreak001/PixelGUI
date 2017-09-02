@@ -355,11 +355,23 @@ abstract class RawWidget
 	mixin RedrawProperty!(bool, "canReceiveFocus");
 	bool hadHover = false;
 	mixin RedrawProperty!(bool, "opaqueHover");
+	bool captured; /// If true this widget will receive all events
 
 	Container computedRectangle;
 	Container[] hierarchy;
 
 	abstract void finalDraw(ref RenderTarget dest, Container[] hierarchy);
+
+	/// Returns true if this widget or any children are captured
+	bool hasCaptured() const @property
+	{
+		if (captured)
+			return true;
+		foreach (child; children)
+			if (child.hasCaptured)
+				return true;
+		return false;
+	}
 
 	/// Override and return true if there are any transparent pixels drawn
 	bool isTransparent() const @property
@@ -493,8 +505,9 @@ abstract class RawWidget
 
 	bool handleMouseMove(int x, int y)
 	{
-		if (!parent || x > computedRectangle.x && x <= computedRectangle.x + computedRectangle.w
-				&& y > computedRectangle.y && y <= computedRectangle.y + computedRectangle.h)
+		bool inBounds = x > computedRectangle.x && x <= computedRectangle.x + computedRectangle.w
+				&& y > computedRectangle.y && y <= computedRectangle.y + computedRectangle.h;
+		if (!parent || hasCaptured || inBounds)
 		{
 			foreach_reverse (child; _children)
 				if (child.handleMouseMove(x, y) && child.opaqueHover)
@@ -504,7 +517,8 @@ abstract class RawWidget
 					return true;
 				}
 			hadHover = true;
-			onMouseMove.emit(x - computedRectangle.x, y - computedRectangle.y);
+			if (inBounds || captured)
+				onMouseMove.emit(x - computedRectangle.x, y - computedRectangle.y);
 			return true;
 		}
 		else
@@ -517,8 +531,9 @@ abstract class RawWidget
 
 	bool handleMouseDown(int x, int y, MouseButton button, int clicks)
 	{
-		if (!parent || x > computedRectangle.x && x <= computedRectangle.x + computedRectangle.w
-				&& y > computedRectangle.y && y <= computedRectangle.y + computedRectangle.h)
+		bool inBounds = x > computedRectangle.x && x <= computedRectangle.x + computedRectangle.w
+				&& y > computedRectangle.y && y <= computedRectangle.y + computedRectangle.h;
+		if (!parent || hasCaptured || inBounds)
 		{
 			foreach_reverse (child; _children)
 				if (child.handleMouseDown(x, y, button, clicks) && child.opaqueHover)
@@ -527,7 +542,8 @@ abstract class RawWidget
 						handleUnhover();
 					return true;
 				}
-			onMouseDown.emit(x - computedRectangle.x, y - computedRectangle.y, button, clicks);
+			if (inBounds || captured)
+				onMouseDown.emit(x - computedRectangle.x, y - computedRectangle.y, button, clicks);
 			return true;
 		}
 		else
@@ -540,8 +556,9 @@ abstract class RawWidget
 
 	bool handleMouseUp(int x, int y, MouseButton button)
 	{
-		if (!parent || x > computedRectangle.x && x <= computedRectangle.x + computedRectangle.w
-				&& y > computedRectangle.y && y <= computedRectangle.y + computedRectangle.h)
+		bool inBounds = x > computedRectangle.x && x <= computedRectangle.x + computedRectangle.w
+				&& y > computedRectangle.y && y <= computedRectangle.y + computedRectangle.h;
+		if (!parent || hasCaptured || inBounds)
 		{
 			foreach_reverse (child; _children)
 				if (child.handleMouseUp(x, y, button) && child.opaqueHover)
@@ -550,7 +567,8 @@ abstract class RawWidget
 						handleUnhover();
 					return true;
 				}
-			onMouseUp.emit(x - computedRectangle.x, y - computedRectangle.y, button);
+			if (inBounds || captured)
+				onMouseUp.emit(x - computedRectangle.x, y - computedRectangle.y, button);
 			return true;
 		}
 		else
