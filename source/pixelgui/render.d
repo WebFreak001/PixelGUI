@@ -237,32 +237,37 @@ enum BlendOp
 	over,
 }
 
-/// Alpha premultiply a color.
-pragma(inline, true) Color blend(BlendOp mixOp = BlendOp.over)(Color fg, Color bg)
+/// Combines two colors using either preset blending operations or a function
+pragma(inline, true) Color blend(alias mixOp = BlendOp.over)(Color fg, Color bg)
 {
-	static if (mixOp == BlendOp.source)
+	static if (is(typeof(mixOp) == BlendOp))
 	{
-		pragma(msg,
-				"Warning: blend called with BlendOp.source, consider just using the fg instead as this is a no-op");
-		return fg;
-	}
-	else
-	{
-		ubyte[4] r;
-		static if (mixOp == BlendOp.over)
+		static if (mixOp == BlendOp.source)
 		{
-			r[3] = (fg[3] + bg[3] * (255 - fg[3]) / 255) & 0xFF;
-			if (r[3] == 0)
-				return r;
-			foreach (c; 0 .. 3)
-			{
-				r[c] = ((fg[c] * 255 + bg[c] * (255 - fg[3])) / r[3]) & 0xFF;
-			}
+			pragma(msg,
+					"Warning: blend called with BlendOp.source, consider just using the fg instead as this is a no-op");
+			return fg;
 		}
 		else
-			static assert(false);
-		return r;
+		{
+			ubyte[4] r;
+			static if (mixOp == BlendOp.over)
+			{
+				r[3] = (fg[3] + bg[3] * (255 - fg[3]) / 255) & 0xFF;
+				if (r[3] == 0)
+					return r;
+				foreach (c; 0 .. 3)
+				{
+					r[c] = ((fg[c] * 255 + bg[c] * (255 - fg[3])) / r[3]) & 0xFF;
+				}
+			}
+			else
+				static assert(false);
+			return r;
+		}
 	}
+	else
+		return mixOp(fg, bg);
 }
 
 ///
@@ -270,10 +275,11 @@ pragma(inline, true) Color blend(BlendOp mixOp = BlendOp.over)(Color fg, Color b
 {
 	assert(blend!(BlendOp.over)(col!"FF000080", col!"000000") == col!"800000");
 	assert(blend!(BlendOp.over)(col!"FF0000", col!"000000") == col!"FF0000");
+	assert(blend!((a, b) => b)(col!"FF0000", col!"00FF00") == col!"00FF00");
 }
 
 /// Copies a bitmap to another one
-void copyTo(BlendOp mixOp = BlendOp.over)(in RenderTarget src, ref RenderTarget target,
+void copyTo(alias mixOp = BlendOp.over)(in RenderTarget src, ref RenderTarget target,
 		int x, int y, int offX = 0, int offY = 0, int clipWidth = 0, int clipHeight = 0)
 {
 	if (clipWidth == 0)
@@ -375,7 +381,7 @@ void copyTo(BlendOp mixOp = BlendOp.over)(in RenderTarget src, ref RenderTarget 
 }
 
 /// Fills a rectangle inside the image with a pattern.
-void fillPattern(alias patternFun, BlendOp mixOp = BlendOp.over)(
+void fillPattern(alias patternFun, alias mixOp = BlendOp.over)(
 		ref RenderTarget target, int x, int y, int w, int h)
 {
 	if (w <= 0 || h <= 0)
@@ -430,7 +436,7 @@ void fillPattern(alias patternFun, BlendOp mixOp = BlendOp.over)(
 }
 
 /// Draws a rectangle border with a solid color.
-void drawBorder(BlendOp mixOp = BlendOp.over)(ref RenderTarget target, int x,
+void drawBorder(alias mixOp = BlendOp.over)(ref RenderTarget target, int x,
 		int y, int w, int h, in Color rgba) pure nothrow @safe
 {
 	if (w <= 0 || h <= 0)
@@ -502,7 +508,7 @@ void drawBorder(BlendOp mixOp = BlendOp.over)(ref RenderTarget target, int x,
 }
 
 /// Fills a rectangle inside the image with a solid color.
-void fillRect(BlendOp mixOp = BlendOp.over)(ref RenderTarget target, int x, int y,
+void fillRect(alias mixOp = BlendOp.over)(ref RenderTarget target, int x, int y,
 		int w, int h, in Color rgba) pure nothrow @safe
 {
 	if (w <= 0 || h <= 0)
