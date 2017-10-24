@@ -1,6 +1,8 @@
 module pixelgui;
 
 public:
+import pixelgui.behaviors.button;
+import pixelgui.behaviors.text;
 import pixelgui.constants;
 import pixelgui.dispatcher;
 import pixelgui.layouts.containers;

@@ -151,7 +151,7 @@ class TextWidget : TextBehavior!(FastWidget, FreeTypeFontFamily)
 						size = cast(int) round(part.size.compute(hierarchy, false) * 64);
 					FT_Set_Char_Size(face, 0, size, 0, 0).enforceFT;
 					font = part.fontStyle;
-					auto height = face.height * size / face.units_per_EM;
+					auto height = cast(int)(face.height * size / face.units_per_EM * part.lineHeight);
 					if (height > maxHeight)
 						maxHeight = height;
 				}
@@ -181,13 +181,13 @@ class TextWidget : TextBehavior!(FastWidget, FreeTypeFontFamily)
 				bool kerning = FT_HAS_KERNING(face);
 				FT_UInt prev;
 				foreach (c; part.text.byDchar)
-					drawChar(dest, face, c, prev, x, y, kerning);
+					drawChar(dest, face, c, prev, x, y, kerning, part.color);
 			}
 		}
 	}
 
 	private void drawChar(ref RenderTarget dest, FT_Face face, dchar c,
-			ref FT_UInt prev, ref int x, ref int y, bool kerning)
+			ref FT_UInt prev, ref int x, ref int y, bool kerning, Color color)
 	{
 		auto glyphIndex = FT_Get_Char_Index(face, cast(FT_ULong) c);
 		if (kerning && c && glyphIndex)
@@ -203,7 +203,7 @@ class TextWidget : TextBehavior!(FastWidget, FreeTypeFontFamily)
 		FT_Render_Glyph(face.glyph, FT_RENDER_MODE_LCD);
 
 		dest.draw(face.glyph.bitmap, (x >> 6) + face.glyph.bitmap_left,
-				(y >> 6) - face.glyph.bitmap_top, textColor);
+				(y >> 6) - face.glyph.bitmap_top, color);
 
 		x += face.glyph.advance.x;
 		y += face.glyph.advance.y;

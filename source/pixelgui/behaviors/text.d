@@ -15,6 +15,7 @@ struct TextPart(FontData)
 	Length size = fitContent;
 	FontData font;
 	string fontStyle;
+	float lineHeight = 1;
 }
 
 enum TextAlignment : ubyte
@@ -73,7 +74,6 @@ abstract class TextBehavior(BaseWidget : RawWidget, FontData) : BaseWidget
 	mixin RedrawInheritableProperty!(Color, "textColor", "Color");
 	mixin RedrawInheritableProperty!(Length, "fontSize");
 	mixin RedrawInheritableProperty!(string, "fontStyle");
-	mixin RedrawProperty!(float, "lineHeight", 1.5f);
 	mixin RedrawProperty!(FontData, "font");
 
 	string text() const @property
