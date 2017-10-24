@@ -25,11 +25,11 @@ string toColorHexString(in Color color)
 template colUnmul(string hex)
 {
 	static if (hex.length == 6)
-		enum colUnmul = cast(Color)[mixin("0x" ~ hex[0 .. 2]), mixin("0x" ~ hex[2 .. 4]),
-				mixin("0x" ~ hex[4 .. 6]), 0xFF];
+		enum colUnmul = cast(Color)[mixin("0x" ~ hex[0 .. 2]),
+				mixin("0x" ~ hex[2 .. 4]), mixin("0x" ~ hex[4 .. 6]), 0xFF];
 	else static if (hex.length == 8)
-		enum colUnmul = cast(Color)[mixin("0x" ~ hex[0 .. 2]), mixin("0x" ~ hex[2 .. 4]),
-				mixin("0x" ~ hex[4 .. 6]), mixin("0x" ~ hex[6 .. 8])];
+		enum colUnmul = cast(Color)[mixin("0x" ~ hex[0 .. 2]),
+				mixin("0x" ~ hex[2 .. 4]), mixin("0x" ~ hex[4 .. 6]), mixin("0x" ~ hex[6 .. 8])];
 	else
 		static assert(false, "Hex color string '" ~ hex ~ "' not supported");
 }
@@ -226,6 +226,17 @@ ubyte[4] demultiply(Color c)
 	auto g = c[1] * 255 / c[3];
 	auto b = c[2] * 255 / c[3];
 	return [r & 0xFF, g & 0xFF, b & 0xFF, c[3]];
+}
+
+/// Linear interpolation of a 4 byte object
+Color lerpColor(Color a, Color b, float t)
+{
+	Color ret;
+	ret[0] = cast(ubyte)(a[0] * (1 - t) + b[0] * t);
+	ret[1] = cast(ubyte)(a[1] * (1 - t) + b[1] * t);
+	ret[2] = cast(ubyte)(a[2] * (1 - t) + b[2] * t);
+	ret[3] = cast(ubyte)(a[3] * (1 - t) + b[3] * t);
+	return ret;
 }
 
 /// Blending operators (See https://www.cairographics.org/operators/)
@@ -436,8 +447,8 @@ void fillPattern(alias patternFun, alias mixOp = BlendOp.over)(
 }
 
 /// Draws a rectangle border with a solid color.
-void drawBorder(alias mixOp = BlendOp.over)(ref RenderTarget target, int x,
-		int y, int w, int h, in Color rgba) pure nothrow @safe
+void drawBorder(alias mixOp = BlendOp.over)(ref RenderTarget target, int x, int y,
+		int w, int h, in Color rgba) pure nothrow @safe
 {
 	if (w <= 0 || h <= 0)
 		return;
