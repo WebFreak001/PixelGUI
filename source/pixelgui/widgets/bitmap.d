@@ -120,6 +120,27 @@ struct BitmapData
 		return BitmapData(t.pixels, t.w, t.h, BitmapFormat.RGBA_PREMULTIPLIED);
 	}
 
+	void premultiply()
+	{
+		switch (format)
+		{
+		case BitmapFormat.RGBA:
+		case BitmapFormat.BGRA:
+			for (int i = 0; i < data.length; i += 4)
+				data[i .. i + 4] = data[i .. i + 4][0 .. 4].premultiply;
+			format--;
+			break;
+		case BitmapFormat.ARGB:
+		case BitmapFormat.ABGR:
+			for (int i = 0; i < data.length; i += 4)
+				data[i .. i + 4] = data[i .. i + 4][0 .. 4].premultiplyARGB;
+			format--;
+			break;
+		default:
+			break;
+		}
+	}
+
 	/// Returns: a premultiplied color at the exact position in the image.
 	/// Throws: `Exception` if out of bounds.
 	Color pixelAt(int x, int y) const

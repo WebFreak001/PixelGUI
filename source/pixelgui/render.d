@@ -217,6 +217,15 @@ Color premultiply(ubyte[4] rgba)
 	return [(r / 255) & 0xFF, (g / 255) & 0xFF, (b / 255) & 0xFF, rgba[3]];
 }
 
+/// Alpha premultiply a color (alpha as first argument).
+ubyte[4] premultiplyARGB(ubyte[4] rgba)
+{
+	const ushort r = rgba[1] * rgba[0];
+	const ushort g = rgba[2] * rgba[0];
+	const ushort b = rgba[3] * rgba[0];
+	return [rgba[0], (r / 255) & 0xFF, (g / 255) & 0xFF, (b / 255) & 0xFF];
+}
+
 /// Undo alpha premultiplication
 ubyte[4] demultiply(Color c)
 {
